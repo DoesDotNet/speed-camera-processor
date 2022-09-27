@@ -94,8 +94,9 @@
         async function uploadFile() {
             let formData = new FormData();
             formData.append("photo", fileupload.files[0]);
-            await fetch('/api/imageuploader', {
+            await fetch('/api/ImageUploader?code=xVsJjA1CHFyrVHFT2c7AHQ_oOH4WxSspEHpvXkEuIN_YAzFuiJCACQ==&clientId=spa', {
                 method: "POST",
+                headers: new Headers({ 'x-functions-key': 'xVsJjA1CHFyrVHFT2c7AHQ_oOH4WxSspEHpvXkEuIN_YAzFuiJCACQ==' }),
                 body: formData
             });
         }
@@ -106,7 +107,8 @@
                 if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
                     callback(JSON.parse(xmlHttp.responseText));
             }
-            xmlHttp.open("GET", '/api/History', true); // true for asynchronous 
+            xmlHttp.open("GET", '/api/History', true); // true for asynchronous
+            xmlhttp.setRequestHeader("x-functions-key", 'xVsJjA1CHFyrVHFT2c7AHQ_oOH4WxSspEHpvXkEuIN_YAzFuiJCACQ==');
             xmlHttp.send(null);
         }
 
