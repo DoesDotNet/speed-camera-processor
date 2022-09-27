@@ -10,20 +10,20 @@ using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Processing;
 using SpeedCameraProcessor.Models;
 
-namespace SpeedCameraProcessor.Functions;
+namespace SpeedCameraProcessor.Functions.Processor;
 
 public static class ImageCropperFunction
 {
     [FunctionName("ImageCropper")]
     public static async Task Run(
-        [QueueTrigger("crops", Connection = "SpeedCameraStore")] CropNumberPlateMessage cropNumberPlateMessage,
+        [QueueTrigger(Constants.CropQueue, Connection = "SpeedCameraStore")] CropNumberPlateMessage cropNumberPlateMessage,
         CancellationToken cancellationToken,
         ILogger log)
     {
         log.LogInformation("Cropping image {FileName}", cropNumberPlateMessage.FileName);
 
-        string storageConnectionString = Environment.GetEnvironmentVariable("SpeedCameraStore");
-        string containerName = Environment.GetEnvironmentVariable("SpeedersContainerName");
+        string storageConnectionString = Environment.GetEnvironmentVariable(Constants.StorageConnection);
+        string containerName = Environment.GetEnvironmentVariable(Constants.Inbox);
 
         BlobContainerClient blobContainerClient = new BlobContainerClient(storageConnectionString, containerName);
         BlobClient originalImageBlobClient = blobContainerClient.GetBlobClient(cropNumberPlateMessage.FileName);
@@ -32,10 +32,10 @@ public static class ImageCropperFunction
 
         using (Image image = await Image.LoadAsync(blobContent.Content.ToStream()))
         {
-            var top = (int) (cropNumberPlateMessage.NormalizedTop * image.Height);
-            var height = (int) (cropNumberPlateMessage.NormalizedHeight * image.Height);
-            var left = (int) (cropNumberPlateMessage.NormalizedLeft * image.Width);
-            var width = (int) (cropNumberPlateMessage.NormalizedWidth * image.Width);
+            var top = (int)(cropNumberPlateMessage.NormalizedTop * image.Height);
+            var height = (int)(cropNumberPlateMessage.NormalizedHeight * image.Height);
+            var left = (int)(cropNumberPlateMessage.NormalizedLeft * image.Width);
+            var width = (int)(cropNumberPlateMessage.NormalizedWidth * image.Width);
 
             image.Mutate(x => x.Crop(new Rectangle(left, top, width, height)));
 
@@ -48,7 +48,6 @@ public static class ImageCropperFunction
                 memoryStream.Position = 0;
                 await croppedImageBlobClient.UploadAsync(memoryStream, cancellationToken);
             }
-
         }
     }
 }

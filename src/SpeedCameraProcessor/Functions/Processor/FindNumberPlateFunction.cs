@@ -8,13 +8,14 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using SpeedCameraProcessor.Models;
 
-namespace SpeedCameraProcessor.Functions;
+namespace SpeedCameraProcessor.Functions.Processor;
 
-public static class DetectNumberPlateFunction
+public static class FindNumberPlateFunction
 {
-    [FunctionName("DetectNumberPlate")]
-    [return: Queue("crops", Connection = "SpeedCameraStore")]
-    public static async Task<CropNumberPlateMessage> Run([BlobTrigger("speeders/{name}", Connection = "SpeedCameraStore")] Stream photoStream, string name, ILogger log)
+    [FunctionName("FindNumberPlate")]
+    [return: Queue(Constants.CropQueue, Connection = Constants.StorageConnection)]
+    public static async Task<CropNumberPlateMessage> Run(
+        [BlobTrigger("inbox/{name}", Connection = Constants.StorageConnection )] Stream photoStream, string name, ILogger log)
     {
         log.LogInformation("Image number plate finding triggered for file {Name}", name);
 
@@ -29,13 +30,17 @@ public static class DetectNumberPlateFunction
         string modelName = Environment.GetEnvironmentVariable("CustomVisionModelName");
         Guid projectId = Guid.Parse(Environment.GetEnvironmentVariable("CustomVisionProjectId"));
 
-        var client = AuthenticatePrediction(endpoint, key);
+        CustomVisionPredictionClient predictionClient = 
+            new CustomVisionPredictionClient(new ApiKeyServiceClientCredentials(key))
+        {
+            Endpoint = endpoint
+        };
 
         ImagePrediction result;
 
         try
         {
-            result = await client.DetectImageWithNoStoreAsync(projectId, modelName, photoStream);
+            result = await predictionClient.DetectImageWithNoStoreAsync(projectId, modelName, photoStream);
         }
         catch (CustomVisionErrorException ex)
         {
@@ -58,14 +63,5 @@ public static class DetectNumberPlateFunction
         }
 
         return null;
-    }
-
-    private static CustomVisionPredictionClient AuthenticatePrediction(string endpoint, string predictionKey)
-    {
-        CustomVisionPredictionClient predictionApi = new CustomVisionPredictionClient(new ApiKeyServiceClientCredentials(predictionKey))
-        {
-            Endpoint = endpoint
-        };
-        return predictionApi;
     }
 }

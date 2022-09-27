@@ -28,28 +28,22 @@ public static class ImageReaderFunction
 
         var headers = await client.ReadInStreamAsync(speederImage);
         string operationLocation = headers.OperationLocation;
-
-        await Task.Delay(2000);
-
         const int numberOfCharsInOperationId = 36;
         string operationId = operationLocation.Substring(operationLocation.Length - numberOfCharsInOperationId);
 
-        // Extract the text
         ReadOperationResult results;
-        log.LogInformation($"Extracting text from {speederId}");
 
         do
         {
+            await Task.Delay(2000);
             results = await client.GetReadResultAsync(Guid.Parse(operationId));
         }
         while (results.Status == OperationStatusCodes.Running ||
                results.Status == OperationStatusCodes.NotStarted);
 
         if(!results.AnalyzeResult.ReadResults.Any())
-        {
             return;
-        }
-
+        
         string numberPlate = results.AnalyzeResult.ReadResults[0].Lines.First().Text;
         var message = new NumberPlateMessage
         {

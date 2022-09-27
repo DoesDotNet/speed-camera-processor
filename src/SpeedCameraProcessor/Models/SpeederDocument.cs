@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace SpeedCameraProcessor;
+namespace SpeedCameraProcessor.Models;
 
 public class SpeederDocument
 {
@@ -10,4 +10,6 @@ public class SpeederDocument
     public string OriginalFileName { get; set; }
     public string NumberPlate { get; set; }
     public bool Processed { get; set; }
+    public bool Processing { get; set; }
+    public bool Failed { get; set; }
 }

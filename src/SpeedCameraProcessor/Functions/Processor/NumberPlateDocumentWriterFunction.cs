@@ -1,18 +1,23 @@
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
+using SpeedCameraProcessor.Models;
 
-namespace SpeedCameraProcessor.OldFunctions;
+namespace SpeedCameraProcessor.Functions.Processor;
 
 public static class NumberPlateDocumentWriterFunction
 {
     [FunctionName("NumberPlateDocumentWriter")]
-    [return: CosmosDB("Police", "Speeders", ConnectionStringSetting = "SpeederCosmos")]
+    [return: CosmosDB(
+        Constants.CosmosDBName,
+        Constants.CosmosCollectionName,
+        ConnectionStringSetting = Constants.CosmosConnectionString)]
     public static SpeederDocument Run(
-        [QueueTrigger("number-plates", Connection = "SpeederStorage")] NumberPlateMessage numberPlateMessage,
+        [QueueTrigger(Constants.NumberPlateQueue, Connection = Constants.StorageConnection)]
+            NumberPlateMessage numberPlateMessage,
         [CosmosDB(
-            "Police",
-            "Speeders", 
-            ConnectionStringSetting = "SpeederCosmos",
+            Constants.CosmosDBName,
+            Constants.CosmosCollectionName,
+            ConnectionStringSetting = Constants.CosmosConnectionString,
             Id ="{Id}",
             PartitionKey = "{Id}"
         )] SpeederDocument speederDocument,
@@ -25,6 +30,8 @@ public static class NumberPlateDocumentWriterFunction
 
         speederDocument.NumberPlate = numberPlateMessage.NumberPlate;
         speederDocument.Processed = true;
+        speederDocument.Failed = numberPlateMessage.MatchingFailed;
+        speederDocument.Processing = false;
         return speederDocument;
     }
 }

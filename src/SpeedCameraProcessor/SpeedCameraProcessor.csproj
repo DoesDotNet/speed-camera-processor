@@ -1,27 +1,38 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AzureFunctionsVersion>v3</AzureFunctionsVersion>
-    <RootNamespace>SpeedCameraProcessor</RootNamespace>
-    <LangVersion>10</LangVersion>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.12.0" />
-    <PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
-    <PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB" Version="3.0.10" />
-    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="5.0.1" />
-    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage.Queues" Version="5.0.1" />
-    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.11" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.2" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Update="host.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="local.settings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </None>
-  </ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<AzureFunctionsVersion>v4</AzureFunctionsVersion>
+		<RootNamespace>SpeedCameraProcessor</RootNamespace>
+		<LangVersion>10</LangVersion>
+	</PropertyGroup>
+	<ItemGroup>
+	  <Compile Remove="OldFunctions\**" />
+	  <EmbeddedResource Remove="OldFunctions\**" />
+	  <None Remove="OldFunctions\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Azure.Storage.Blobs" Version="12.13.1" />
+		<PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
+		<PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction" Version="2.0.0" />
+		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.30.1" />
+		<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB" Version="3.0.10" />
+		<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.SignalRService" Version="1.8.0" />
+		<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="5.0.1" />
+		<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage.Queues" Version="5.0.1" />
+		<PackageReference Include="Microsoft.NET.Sdk.Functions" Version="4.1.3" />
+		<PackageReference Include="MimeTypeMapOfficial" Version="1.0.17" />
+		<PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="host.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="local.settings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+		</None>
+		<None Update="Web\index.html">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 </Project>
