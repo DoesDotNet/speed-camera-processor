@@ -94,7 +94,7 @@
         async function uploadFile() {
             let formData = new FormData();
             formData.append("photo", fileupload.files[0]);
-            await fetch('/api/ImageUploader?code=xVsJjA1CHFyrVHFT2c7AHQ_oOH4WxSspEHpvXkEuIN_YAzFuiJCACQ==&clientId=spa', {
+            await fetch('/api/ImageUploader', {
                 method: "POST",
                 headers: new Headers({ 'x-functions-key': 'xVsJjA1CHFyrVHFT2c7AHQ_oOH4WxSspEHpvXkEuIN_YAzFuiJCACQ==' }),
                 body: formData
