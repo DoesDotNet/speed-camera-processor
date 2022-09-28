@@ -8,9 +8,7 @@
         public const string CosmosConnectionString = "SpeedCameraCosmos";
 
         public const string StorageConnection = "SpeedCameraStore";
-        public const string Inbox = "SpeedCameraInbox";
 
         public const string NumberPlateQueue = "number-plates";
-        public const string CropQueue = "crop-plate";
     }
 }

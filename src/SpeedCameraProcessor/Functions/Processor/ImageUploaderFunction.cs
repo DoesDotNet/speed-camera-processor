@@ -1,12 +1,16 @@
 using System;
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Blobs.Specialized;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage.Blob;
 using SpeedCameraProcessor.Models;
 
 namespace SpeedCameraProcessor.Functions.Processor;
@@ -20,13 +24,14 @@ public static class ImageUploaderFunction
             Constants.CosmosDBName,
             Constants.CosmosCollectionName,
             ConnectionStringSetting = Constants.CosmosConnectionString)] IAsyncCollector<SpeederDocument> speederDocuments,
+        IBinder binder,
         ILogger log)
     {
         try
         {
             var formdata = await req.ReadFormAsync();
 
-            if(req.Form.Files.Count < 1)
+            if (req.Form.Files.Count < 1)
                 return new BadRequestResult();
 
             var file = req.Form.Files["photo"];
@@ -37,19 +42,21 @@ public static class ImageUploaderFunction
             var id = Guid.NewGuid();
             var newFileName = $"{id}{extensions}";
 
+            // instead of using output blob binding as attribute, I'm setting it
+            // in code so we can have control of the name and content type
+            var outboundBlob = new BlobAttribute($"speeders/{newFileName}", FileAccess.Write);
+            var blockBlobClient = binder.Bind<BlockBlobClient>(outboundBlob);
+            await blockBlobClient.UploadAsync(file.OpenReadStream(), new BlobHttpHeaders {  ContentType = file.ContentType});
+
+            // write to cosmos
             await speederDocuments.AddAsync(new SpeederDocument
             {
                 Id = id,
                 OriginalFileName = file.FileName,
+                PhotoFileName = newFileName,
+                CropFileName = newFileName,
                 Processing = true
             });
-
-            string containerName = Environment.GetEnvironmentVariable("SpeedCameraInbox");
-            string connectionString = Environment.GetEnvironmentVariable("SpeedCameraStore");
-
-            BlobClient bloblClient = new BlobClient(connectionString, containerName, newFileName);
-
-            await bloblClient.UploadAsync(file.OpenReadStream());
 
             log.LogInformation("Photo {FileName} uploaded finished", file.FileName);
 

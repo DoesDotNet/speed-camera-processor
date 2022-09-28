@@ -18,7 +18,7 @@ namespace SpeedCameraProcessor.Functions.Web
                 databaseName: Constants.CosmosDBName,
                 collectionName: Constants.CosmosCollectionName,
                 ConnectionStringSetting = Constants.CosmosConnectionString,
-                SqlQuery = "SELECT TOP 10 * FROM c ORDER BY c._ts DESC")]
+                SqlQuery = "SELECT TOP 10 * FROM c WHERE c.Processed = true ORDER BY c._ts DESC")]
                 IEnumerable<SpeederDocument> speeders,
             ILogger log)
         {

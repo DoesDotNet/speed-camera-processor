@@ -13,15 +13,16 @@ namespace SpeedCameraProcessor.Functions.Processor;
 public static class FindNumberPlateFunction
 {
     [FunctionName("FindNumberPlate")]
-    [return: Queue(Constants.CropQueue, Connection = Constants.StorageConnection)]
-    public static async Task<CropNumberPlateMessage> Run(
-        [BlobTrigger("inbox/{name}", Connection = Constants.StorageConnection )] Stream photoStream, string name, ILogger log)
+    public static async Task Run(
+        [BlobTrigger("speeders/{name}", Connection = Constants.StorageConnection )] Stream photoStream, string name,
+        [Queue("crop-plate", Connection = Constants.StorageConnection)] IAsyncCollector<CropNumberPlateMessage> cropNumberPlateQueue,
+        ILogger log)
     {
         log.LogInformation("Image number plate finding triggered for file {Name}", name);
 
         if (name.StartsWith("plates"))
         {
-            return null;
+            return;
         }
 
         string endpoint = Environment.GetEnvironmentVariable("CustomVisionEndpoint");
@@ -45,23 +46,21 @@ public static class FindNumberPlateFunction
         catch (CustomVisionErrorException ex)
         {
             log.LogError(ex, "Error detecting number plate");
-            return null;
+            return;
         }
 
         var plate = result.Predictions.FirstOrDefault(x => x.Probability > 0.75 && x.TagName == tagName);
         if (plate != null)
         {
             log.LogInformation("Plate found for {Name}", name);
-            CropNumberPlateMessage cropNumberPlateMessage = new CropNumberPlateMessage(name,
+            var cropNumberPlateMessage = new CropNumberPlateMessage(name,
                 plate.BoundingBox.Top,
                 plate.BoundingBox.Left,
                 plate.BoundingBox.Width,
                 plate.BoundingBox.Height
             );
 
-            return cropNumberPlateMessage;
+            await cropNumberPlateQueue.AddAsync(cropNumberPlateMessage);
         }
-
-        return null;
     }
 }

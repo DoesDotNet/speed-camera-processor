@@ -5,10 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Speed Camera Processor</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+    <!--<link rel="shortcut icon" href="https://upload.wikimedia.org/wikipedia/commons/5/58/Earlyswerver_UK_Speed_Camera_Sign.svg">-->
+    <link rel="shortcut icon" href="https://static.thenounproject.com/png/1629031-200.png" />
+    <style>
+        .spinner {
+            width: 64px;
+            height: 64px;
+            border: 8px solid;
+            border-color: #3d5af1 transparent #3d5af1 transparent;
+            border-radius: 50%;
+            animation: spin 1.2s linear infinite;
+        }
 
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
 <body>
-
     <main>
         <div class="container">
             <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
@@ -20,23 +40,26 @@
         </div>
 
         <div class="container">
-
-            <div class="mb-3">
-                <input type="file" class="form-control" id="fileupload">
-            </div>
-            <div class="mb-3">
-                <button id="upload-button" class="btn btn-primary" onclick="uploadFile()"> Upload </button>
+            <div class="row">
+                <div class="col-12">
+                    <div class="m-3">
+                        <input type="file" class="form-control" id="fileupload">
+                    </div>
+                    <div class="m-3">
+                        <button id="upload-button" class="btn btn-primary" onclick="uploadFile()"> Upload </button>
+                    </div>
+                </div>
             </div>
 
             <div class="row">
                 <div class="col-12">
                     <h3>Processing</h3>
-                    <table id="processing" class="table">
+                    <table id="processing" class="table table-primary table-hover">
                         <thead>
                             <tr>
-                                <th scope="col">File</th>
+                                <th scope="col" class="d-none d-lg-table-cell">File</th>
+                                <th scope="col">Image</th>
                                 <th scope="col">Processing</th>
-                                <th scope="col">Processed</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -48,15 +71,15 @@
             <div class="row">
                 <div class="col-12">
                     <h3>History</h3>
-                    <table id="history" class="table">
+                    <table id="history" class="table table-success table-hover">
                         <thead>
                             <tr>
-                                <th scope="col">Id</th>
-                                <th scope="col">File</th>
+                                <th scope="col" class="d-none d-lg-table-cell">Id</th>
+                                <th scope="col" class="d-none d-lg-table-cell">File</th>
                                 <th scope="col">Registration</th>
-                                <th scope="col">Processed</th>
-                                <th scope="col">Processing</th>
-                                <th scope="col">Failed</th>
+                                <th scope="col" class="d-none d-lg-table-cell">Photo</th>
+                                <th scope="col">Crop</th>
+                                <th scope="col">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -73,7 +96,7 @@
         let messages = document.querySelector('#messages');
         const apiBaseUrl = window.location.origin;
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl(apiBaseUrl + '/api')
+            .withUrl(apiBaseUrl)
             .configureLogging(signalR.LogLevel.Information)
             .build();
         connection.on('alive', (message) => {
@@ -94,7 +117,7 @@
         async function uploadFile() {
             let formData = new FormData();
             formData.append("photo", fileupload.files[0]);
-            await fetch('/api/ImageUploader', {
+            await fetch('/ImageUploader', {
                 method: "POST",
                 headers: new Headers({ 'x-functions-key': 'xVsJjA1CHFyrVHFT2c7AHQ_oOH4WxSspEHpvXkEuIN_YAzFuiJCACQ==' }),
                 body: formData
@@ -107,8 +130,8 @@
                 if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
                     callback(JSON.parse(xmlHttp.responseText));
             }
-            xmlHttp.open("GET", '/api/History', true); // true for asynchronous
-            xmlhttp.setRequestHeader("x-functions-key", 'xVsJjA1CHFyrVHFT2c7AHQ_oOH4WxSspEHpvXkEuIN_YAzFuiJCACQ==');
+            xmlHttp.open("GET", '/History', true); // true for asynchronous
+            xmlHttp.setRequestHeader("x-functions-key", 'xVsJjA1CHFyrVHFT2c7AHQ_oOH4WxSspEHpvXkEuIN_YAzFuiJCACQ==');
             xmlHttp.send(null);
         }
 
@@ -120,16 +143,55 @@
                 console.log(data[i]);
 
                 row = historyTbody.insertRow();
-                row.id = data.id;
+                row.id = data[i].id;
 
-                for (const [key, value] of Object.entries(data[i])) {
-                    let cell = row.insertCell();
-                    let text = document.createTextNode(value);
-                    cell.appendChild(text);
-                }
+                addTextCell(row, data[i].id, true);
+                addTextCell(row, data[i].originalFileName, true);
+                addTextCell(row, data[i].numberPlate);
+                addImageCell(row, `/Images/${data[i].photoFileName}`, 200, true);
+                addImageCell(row, `/Images/Plates/${data[i].cropFileName}`);
+                addStatusCell(row, !data[i].failed)
             }
         }
 
+        function addTextCell(row, text, hideOnSmall = false) {
+            let cell = row.insertCell();
+            let textNode = document.createTextNode(text);
+
+            if (hideOnSmall) {
+                cell.className = 'd-none d-lg-table-cell';
+            }
+
+            cell.appendChild(textNode);
+        }
+
+        function addImageCell(row, url, width = 200, hideOnSmall = false) {
+            let cell = row.insertCell();
+            let img = document.createElement('img');
+            img.src = url;
+            img.width = width;
+
+            if (hideOnSmall) {
+                cell.className = 'd-none d-lg-table-cell';
+            }
+
+            cell.appendChild(img);
+        }
+
+        function addStatusCell(row, value) {
+            if (value) {
+                addImageCell(row, 'https://upload.wikimedia.org/wikipedia/commons/7/73/Flat_tick_icon.svg', 50);
+            } else {
+                addImageCell(row, 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Flat_cross_icon.svg', 50);
+            }
+        }
+
+        function addSpinnerCell(row) {
+            let cell = row.insertCell();
+            let div = document.createElement('div');
+            div.className = 'spinner';
+            cell.appendChild(div);
+        }
 
         function addProcessing(data) {
             let tbodyRef = document.getElementById('processing').getElementsByTagName('tbody')[0];
@@ -142,17 +204,15 @@
             row = tbodyRef.insertRow();
             row.id = data.id;
 
-            let fileCell = row.insertCell();
-            let fileText = document.createTextNode(data.OriginalFileName);
-            fileCell.appendChild(fileText);
+            addTextCell(row, data.OriginalFileName, true);
+            addImageCell(row, `/Images/${data.PhotoFileName}`);
+            if (data.Processing) {
+                addSpinnerCell(row);
+            }
 
-            let processingCell = row.insertCell();
-            let processingText = document.createTextNode(data.Processing);
-            processingCell.appendChild(processingText);
-
-            let processedCell = row.insertCell();
-            let processedText = document.createTextNode(data.Processed);
-            processedCell.appendChild(processedText);
+            if (data.Processed) {
+                addImageCell(row, 'https://static.thenounproject.com/png/3437096-200.png');
+            }
         }
     </script>
 </body>

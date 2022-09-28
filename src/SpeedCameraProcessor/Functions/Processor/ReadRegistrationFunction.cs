@@ -16,10 +16,12 @@ public static class ReadRegistrationFunction
         "(^[A-Z]{2}[0-9]{2}\\s?[A-Z]{3}$)|(^[A-Z][0-9]{1,3}[A-Z]{3}$)|(^[A-Z]{3}[0-9]{1,3}[A-Z]$)|(^[0-9]{1,4}[A-Z]{1,2}$)|(^[0-9]{1,3}[A-Z]{1,3}$)|(^[A-Z]{1,2}[0-9]{1,4}$)|(^[A-Z]{1,3}[0-9]{1,3}$)|(^[A-Z]{1,3}[0-9]{1,4}$)|(^[0-9]{3}[DX]{1}[0-9]{3}$)";
 
     [FunctionName("ReadRegistration")]
-    [return: Queue(Constants.NumberPlateQueue, Connection = Constants.StorageConnection)]
-    public static async Task<NumberPlateMessage> Run([BlobTrigger("inbox/plates/{name}", Connection = Constants.StorageConnection)] Stream photoStream, string name, ILogger log)
+    public static async Task Run(
+        [BlobTrigger("speeders/plates/{name}", Connection = Constants.StorageConnection)] Stream photoStream, string name,
+        [Queue(Constants.NumberPlateQueue, Connection = Constants.StorageConnection)] IAsyncCollector<NumberPlateMessage> numberPlateQueue,
+        ILogger log)
     {
-        string id = name.Substring(0, name.IndexOf('.')).Replace("-plate", string.Empty);
+        string id = name.Substring(0, name.IndexOf('.'));
         log.LogInformation($"Read Number Plate Function for {id}");
 
         string endpoint = Environment.GetEnvironmentVariable("VisionEndpoint");
@@ -32,6 +34,11 @@ public static class ReadRegistrationFunction
 
         string operationLocation;
 
+        var message = new NumberPlateMessage
+        {
+            Id = id
+        };
+
         try
         {
             var textHeaders = await client.ReadInStreamAsync(photoStream);
@@ -40,7 +47,9 @@ public static class ReadRegistrationFunction
         catch (Exception ex)
         {
             log.LogError(ex, "Error reading stream to vision");
-            throw;
+            message.MatchingFailed = true;
+            await numberPlateQueue.AddAsync(message);
+            return;
         }
 
         const int numberOfCharsInOperationId = 36;
@@ -57,27 +66,24 @@ public static class ReadRegistrationFunction
         } while (results.Status == OperationStatusCodes.Running ||
                  results.Status == OperationStatusCodes.NotStarted);
 
-        var message = new NumberPlateMessage
-        {
-            Id = id
-        };
 
         var textUrlFileResults = results.AnalyzeResult.ReadResults;
         foreach (ReadResult page in textUrlFileResults)
         {
             foreach (Line line in page.Lines)
             {
-                var match = Regex.Match(line.Text, NumberPlateRegEx);
-                if (match.Success)
-                {
-                    log.LogInformation("Text found for {Name}: {Text}", name, line.Text);
-                    message.NumberPlate = line.Text;
-                    return message;
-                }
+                //var match = Regex.Match(line.Text, NumberPlateRegEx);
+                //if (match.Success)
+                //{
+                log.LogInformation("Text found for {Name}: {Text}", name, line.Text);                
+                message.NumberPlate = line.Text;
+                await numberPlateQueue.AddAsync(message);
+                return;
+                //}
             }
         }
 
         message.MatchingFailed = true;
-        return message;
+        await numberPlateQueue.AddAsync(message);
     }
 }
