@@ -11,6 +11,9 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Blob;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Processing;
 using SpeedCameraProcessor.Models;
 
 namespace SpeedCameraProcessor.Functions.Processor;
@@ -46,7 +49,18 @@ public static class ImageUploaderFunction
             // in code so we can have control of the name and content type
             var outboundBlob = new BlobAttribute($"speeders/{newFileName}", FileAccess.Write);
             var blockBlobClient = binder.Bind<BlockBlobClient>(outboundBlob);
-            await blockBlobClient.UploadAsync(file.OpenReadStream(), new BlobHttpHeaders {  ContentType = file.ContentType});
+
+            // resize image or Custom Vision will have a shit fit
+            IImageFormat format;
+            using var memoryStream =  new MemoryStream();
+            using (Image image = Image.Load(file.OpenReadStream(), out format))
+            {
+                image.Mutate(x => x.Resize(new ResizeOptions { Mode = ResizeMode.Max, Size = new Size(2000, 2000) }));
+                await image.SaveAsync(memoryStream, format);
+            }
+
+            memoryStream.Position = 0;
+            await blockBlobClient.UploadAsync(memoryStream, new BlobHttpHeaders {  ContentType = file.ContentType});
 
             // write to cosmos
             await speederDocuments.AddAsync(new SpeederDocument
