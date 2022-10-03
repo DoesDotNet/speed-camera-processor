@@ -15,6 +15,7 @@ namespace SpeedCameraProcessor.Functions.Web
                 collectionName: Constants.CosmosCollectionName,
                 ConnectionStringSetting = Constants.CosmosConnectionString,
                 LeaseCollectionName = Constants.CosmosLeasesCollectionName,
+                FeedPollDelay = 500,
                 CreateLeaseCollectionIfNotExists = true)]IReadOnlyList<Document> input,
             [SignalR(HubName = "serverless")] IAsyncCollector<SignalRMessage> signalRMessages)
         {
