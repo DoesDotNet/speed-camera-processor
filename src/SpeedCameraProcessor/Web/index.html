@@ -43,7 +43,7 @@
             <div class="row mb-3">
                 <div class="col-12">
                     <div class="m-3">
-                        <input type="file" class="form-control" id="fileupload">
+                        <input type="file" class="form-control" id="fileupload" placeholder="Select image to process">
                     </div>
                     <div class="m-3">
                         <button id="upload-button" class="btn btn-primary" onclick="uploadFile()"> Upload </button>
@@ -132,6 +132,7 @@
                 body: formData
             });
 
+            fileNode.value = null;
             fileNode.disabled = false;
             uploadBotton.disabled = false;
             uploadingMessage.className = 'd-none';
