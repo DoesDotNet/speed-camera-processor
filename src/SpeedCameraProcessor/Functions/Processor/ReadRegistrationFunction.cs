@@ -60,9 +60,12 @@ public static class ReadRegistrationFunction
         log.LogInformation("Extracting text from photo");
 
         do
-        {
-            await Task.Delay(2000);
+        {            
             results = await client.GetReadResultAsync(Guid.Parse(operationId));
+            
+            if(results.Status == OperationStatusCodes.Running
+                || results.Status == OperationStatusCodes.Running)
+                    await Task.Delay(500);
         } while (results.Status == OperationStatusCodes.Running ||
                  results.Status == OperationStatusCodes.NotStarted);
 

@@ -13,6 +13,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Blob;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 using SpeedCameraProcessor.Models;
 
@@ -38,26 +40,39 @@ public static class ImageUploaderFunction
                 return new BadRequestResult();
 
             var file = req.Form.Files["photo"];
+            var extension = Path.GetExtension(file.FileName);
 
             log.LogInformation("Photo {FileName} uploaded started", file.FileName);
-
-            var extensions = Path.GetExtension(file.FileName);
-            var id = Guid.NewGuid();
-            var newFileName = $"{id}{extensions}";
-
-            // instead of using output blob binding as attribute, I'm setting it
-            // in code so we can have control of the name and content type
-            var outboundBlob = new BlobAttribute($"speeders/{newFileName}", FileAccess.Write);
-            var blockBlobClient = binder.Bind<BlockBlobClient>(outboundBlob);
-
-            // resize image or Custom Vision will have a shit fit
+                        
+            // resize image or Custom Vision will have a shit fit (4MB max)
             IImageFormat format;
             using var memoryStream =  new MemoryStream();
             using (Image image = Image.Load(file.OpenReadStream(), out format))
             {
                 image.Mutate(x => x.Resize(new ResizeOptions { Mode = ResizeMode.Max, Size = new Size(2000, 2000) }));
-                await image.SaveAsync(memoryStream, format);
+
+                // I wanted to support webp, but Custom Vision doesn't
+                // https://learn.microsoft.com/en-us/azure/cognitive-services/computer-vision/overview#image-requirements
+                if (format is WebpFormat)
+                {
+                    extension = ".jpg";
+                    await image.SaveAsync(memoryStream, JpegFormat.Instance);
+                }
+                else
+                {
+                    await image.SaveAsync(memoryStream, format);
+                }
             }
+
+           
+            var id = Guid.NewGuid();
+            var newFileName = $"{id}{extension}";
+
+
+            // instead of using output blob binding as attribute, I'm setting it
+            // in code so we can have control of the name and content type
+            var outboundBlob = new BlobAttribute($"speeders/{newFileName}", FileAccess.Write);
+            var blockBlobClient = binder.Bind<BlockBlobClient>(outboundBlob);
 
             memoryStream.Position = 0;
             await blockBlobClient.UploadAsync(memoryStream, new BlobHttpHeaders {  ContentType = file.ContentType});
