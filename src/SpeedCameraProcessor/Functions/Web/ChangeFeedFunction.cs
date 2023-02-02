@@ -11,12 +11,12 @@ namespace SpeedCameraProcessor.Functions.Web
         [FunctionName("ChangeFeed")]
         public static async Task ChangeFeed(
             [CosmosDBTrigger(
-                databaseName: Constants.CosmosDBName,
-                collectionName: Constants.CosmosCollectionName,
-                ConnectionStringSetting = Constants.CosmosConnectionString,
-                LeaseCollectionName = Constants.CosmosLeasesCollectionName,
+                "%DatabaseName%",
+                "%CollectionName%",
+                ConnectionStringSetting = "CosmosConnectionString",
+                LeaseCollectionName = "%LeasesCollectionName%",
                 FeedPollDelay = 500,
-                CreateLeaseCollectionIfNotExists = true)]IReadOnlyList<Document> input,
+                CreateLeaseCollectionIfNotExists = true)] IReadOnlyList<Document> input,
             [SignalR(HubName = "serverless")] IAsyncCollector<SignalRMessage> signalRMessages)
         {
 

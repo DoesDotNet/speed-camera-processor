@@ -14,8 +14,8 @@ public static class FindNumberPlateFunction
 {
     [FunctionName("FindNumberPlate")]
     public static async Task Run(
-        [BlobTrigger("speeders/{name}", Connection = Constants.StorageConnection )] Stream photoStream, string name,
-        [Queue("crop-plate", Connection = Constants.StorageConnection)] IAsyncCollector<CropNumberPlateMessage> cropNumberPlateQueue,
+        [BlobTrigger("speeders/{name}", Connection = "SpeedCameraStore")] Stream photoStream, string name,
+        [Queue("%CropQueueName%", Connection = "SpeedCameraStore")] IAsyncCollector<CropNumberPlateMessage> cropNumberPlateQueue,
         ILogger log)
     {
         log.LogInformation("Image number plate finding triggered for file {Name}", name);

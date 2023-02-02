@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Azure.CognitiveServices.Vision.ComputerVision;
 using Microsoft.Azure.CognitiveServices.Vision.ComputerVision.Models;
@@ -17,8 +16,8 @@ public static class ReadRegistrationFunction
 
     [FunctionName("ReadRegistration")]
     public static async Task Run(
-        [BlobTrigger("speeders/plates/{name}", Connection = Constants.StorageConnection)] Stream photoStream, string name,
-        [Queue(Constants.NumberPlateQueue, Connection = Constants.StorageConnection)] IAsyncCollector<NumberPlateMessage> numberPlateQueue,
+        [BlobTrigger("speeders/plates/{name}", Connection = "SpeedCameraStore")] Stream photoStream, string name,
+        [Queue("%NumberPlateQueueName%", Connection = "SpeedCameraStore")] IAsyncCollector<NumberPlateMessage> numberPlateQueue,
         ILogger log)
     {
         string id = name.Substring(0, name.IndexOf('.'));

@@ -17,9 +17,9 @@ public static class ImageCropperFunction
 {
     [FunctionName("ImageCropper")]
     public static async Task Run(
-        [QueueTrigger("crop-plate", Connection = "SpeedCameraStore")] CropNumberPlateMessage cropNumberPlateMessage,
-        [Blob("speeders/{FileName}", FileAccess.Read, Connection = Constants.StorageConnection)] Stream speederImage, // input
-        [Blob("speeders/plates/{FileName}", FileAccess.Write, Connection = Constants.StorageConnection)] BlockBlobClient speederPlateImageClient, // output
+        [QueueTrigger("%CropQueueName%", Connection = "SpeedCameraStore")] CropNumberPlateMessage cropNumberPlateMessage,
+        [Blob("speeders/{FileName}", FileAccess.Read, Connection = "SpeedCameraStore")] Stream speederImage, // input
+        [Blob("speeders/plates/{FileName}", FileAccess.Write, Connection = "SpeedCameraStore")] BlockBlobClient speederPlateImageClient, // output
         CancellationToken cancellationToken,
         ILogger log)
     {

@@ -25,10 +25,7 @@ public static class ImageUploaderFunction
     [FunctionName("ImageUploader")]
     public static async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req,
-        [CosmosDB(
-            Constants.CosmosDBName,
-            Constants.CosmosCollectionName,
-            ConnectionStringSetting = Constants.CosmosConnectionString)] IAsyncCollector<SpeederDocument> speederDocuments,
+        [CosmosDB("%DatabaseName%", "%CollectionName%", ConnectionStringSetting = "CosmosConnectionString")] IAsyncCollector<SpeederDocument> speederDocuments,
         IBinder binder,
         ILogger log)
     {

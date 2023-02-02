@@ -15,9 +15,9 @@ namespace SpeedCameraProcessor.Functions.Web
         public static async Task<IActionResult> History(
             [HttpTrigger(AuthorizationLevel.Function, "GET", Route = "History")] HttpRequest req,
              [CosmosDB(
-                databaseName: Constants.CosmosDBName,
-                collectionName: Constants.CosmosCollectionName,
-                ConnectionStringSetting = Constants.CosmosConnectionString,
+                "%DatabaseName%",
+                "%CollectionName%",
+                ConnectionStringSetting = "CosmosConnectionString",
                 SqlQuery = "SELECT TOP 10 * FROM c WHERE c.Processed = true ORDER BY c._ts DESC")]
                 IEnumerable<SpeederDocument> speeders,
             ILogger log)

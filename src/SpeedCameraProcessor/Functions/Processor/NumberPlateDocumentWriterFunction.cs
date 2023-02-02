@@ -8,16 +8,15 @@ public static class NumberPlateDocumentWriterFunction
 {
     [FunctionName("NumberPlateDocumentWriter")]
     [return: CosmosDB(
-        Constants.CosmosDBName,
-        Constants.CosmosCollectionName,
-        ConnectionStringSetting = Constants.CosmosConnectionString)]
+        "%DatabaseName%",
+        "%CollectionName%",
+        ConnectionStringSetting = "CosmosConnectionString")]
     public static SpeederDocument Run(
-        [QueueTrigger(Constants.NumberPlateQueue, Connection = Constants.StorageConnection)]
-            NumberPlateMessage numberPlateMessage,
+        [QueueTrigger("%NumberPlateQueueName%", Connection = "SpeedCameraStore")] NumberPlateMessage numberPlateMessage,
         [CosmosDB(
-            Constants.CosmosDBName,
-            Constants.CosmosCollectionName,
-            ConnectionStringSetting = Constants.CosmosConnectionString,
+            "%DatabaseName%",
+            "%CollectionName%",
+            ConnectionStringSetting = "CosmosConnectionString",
             Id ="{Id}",
             PartitionKey = "{Id}"
         )] SpeederDocument speederDocument,
